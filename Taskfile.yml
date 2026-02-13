@@ -1,0 +1,24 @@
+version: "3"
+
+vars:
+  SERVICE: tasks-service stats-service frontend
+  NODE_SERVICES: tasks-service stats-service
+
+tasks:
+  default:
+    desc: Affiche les tâches disponibles
+    cmds:
+      - task --list
+    silent: true
+
+  install:
+    desc: Installe les dépendances de tous les services
+    cmds:
+      - for:
+          var: NODE_SERVICES
+          split: " "
+        cmd: |
+          echo "Installing {{.ITEM}}..."
+          cd {{.ITEM}} && npm install
+      - echo "Toutes les dépendances sont installées"
+    silent: true

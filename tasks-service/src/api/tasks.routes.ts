@@ -22,6 +22,7 @@ export function createTaskRoutes(repository: ITaskRepository): Router {
   // GET /api/tasks?status=todo|done
   router.get('/', async (req: Request, res: Response) => {
     try {
+      console.log('hellowords')
       const status = req.query.status as TaskStatus | undefined
       let tasks = await repository.findAll()
 

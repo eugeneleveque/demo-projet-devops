@@ -18,8 +18,8 @@ npm install
 Créer un fichier `.env` avec :
 
 ```env
-VITE_TASKS_API_URL=http://localhost:3001
-VITE_STATS_API_URL=http://localhost:3002
+VITE_TASKS_API_URL=http://localhost:3001/api/tasks
+VITE_STATS_API_URL=http://localhost:3002/api/stats
 ```
 
 ## Lancer le projet

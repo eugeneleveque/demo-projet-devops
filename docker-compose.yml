@@ -1,0 +1,83 @@
+# version : '3.9'
+#  docker-compose up -d --build
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: demo-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: demo_db
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./tasks-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+ 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  tasks-service:
+    build:
+      context: ./tasks-service
+    container_name: demo-tasks-service
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://admin:secret123@postgres:5432/demo_db
+      - PORT=3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  stats-service:
+    build:
+      context: ./stats-service
+    container_name: demo-stats-service
+    ports:
+      - "3002:3002"
+    environment:
+      - TASKS_SERVICE_URL=http://tasks-service:3001
+      - PORT=3002
+    depends_on:
+      - tasks-service
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: demo-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - tasks-service
+      - stats-service
+    networks:
+      - app-network
+  adminer:
+    image: adminer:latest
+    container_name: demo-adminer
+    ports:
+    - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+ 
+
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

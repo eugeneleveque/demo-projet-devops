@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-stats-service
+  labels:
+    app: {{ .Release.Name }}-stats-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-stats-service
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-stats-service
+    spec:
+      containers:
+        - name: stats-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-stats-service-config
+{{- if .Values.secrets }}
+            - secretRef:
+                name: {{ .Release.Name }}-stats-service-secret
+{{- end }}

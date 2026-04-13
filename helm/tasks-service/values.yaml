@@ -1,0 +1,19 @@
+replicaCount: 2
+
+image:
+  repository: demo-projet-devops-tasks-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3000
+  nodePort: 30001
+
+env:
+  PORT: "3000"
+  NODE_ENV: production
+
+secrets: {}
+  # DATABASE_URL is injected at deploy time via --set from the .env file (see Taskfile.yml)

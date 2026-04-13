@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-projet-devops-frontend
+  labels:
+    app: demo-projet-devops-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-projet-devops-frontend
+  template:
+    metadata:
+      labels:
+        app: demo-projet-devops-frontend
+    spec:
+      containers:
+        - name: demo-projet-devops-frontend
+          image: demo-projet-devops-frontend:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          env:
+            - name: NODE_ENV
+              value: "production"

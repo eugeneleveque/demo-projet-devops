@@ -1,0 +1,17 @@
+replicaCount: 2
+
+image:
+  repository: demo-projet-devops-frontend
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 30080
+
+env:
+  NODE_ENV: production
+
+secrets: {}

@@ -1,0 +1,131 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: demo-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: demo_db
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./tasks-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+      restart_policy:
+        condition: always
+    networks:
+      - app-network
+
+  tasks-service:
+    image: demo-tasks-service:latest
+    container_name: demo-tasks-service
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://admin:secret123@postgres:5432/demo_db
+      - PORT=3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      restart_policy:
+        condition: always
+    networks:
+      - app-network
+
+  stats-service:
+    image: demo-stats-service:latest
+    container_name: demo-stats-service
+    ports:
+      - "3002:3002"
+    environment:
+      - TASKS_SERVICE_URL=http://tasks-service:3001
+      - PORT=3002
+    depends_on:
+      - tasks-service
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      restart_policy:
+        condition: always
+    networks:
+      - app-network
+
+  frontend:
+    image: demo-frontend:latest
+    container_name: demo-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - tasks-service
+      - stats-service
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      restart_policy:
+        condition: always
+    networks:
+      - app-network
+
+
+  gateway:
+    image: demo-gateway:latest
+    container_name: demo-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - tasks-service
+      - stats-service
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+      restart_policy:
+        condition: always
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

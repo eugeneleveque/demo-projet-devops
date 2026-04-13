@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tasks-service
+  labels:
+    app: {{ .Release.Name }}-tasks-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-tasks-service
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-tasks-service
+    spec:
+      containers:
+        - name: tasks-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-tasks-service-config
+{{- if .Values.secrets }}
+            - secretRef:
+                name: {{ .Release.Name }}-tasks-service-secret
+{{- end }}

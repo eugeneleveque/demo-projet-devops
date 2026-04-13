@@ -1,0 +1,19 @@
+replicaCount: 2
+
+image:
+  repository: stats-service
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3002
+  nodePort: 30002
+
+env:
+  PORT: "3002"
+  TASKS_SERVICE_URL: http://tasks-service:80
+  NODE_ENV: production
+
+secrets: {}

@@ -1,5 +1,7 @@
 version: "3"
 
+dotenv: [".env"]
+
 vars:
   SERVICE: tasks-service stats-service frontend
   NODE_SERVICES: tasks-service stats-service
@@ -10,6 +12,7 @@ tasks:
     cmds:
       - task --list
     silent: true
+
 
   install:
     desc: Installe les dépendances de tous les services
@@ -22,3 +25,63 @@ tasks:
           cd {{.ITEM}} && npm install
       - echo "Toutes les dépendances sont installées"
     silent: true
+
+  docker-build:
+    desc: Construit les images Docker pour tous les services individuellement
+    cmds:
+      - for:
+          var: SERVICE
+          split: " "
+        cmd: |
+          echo "Building {{.ITEM}}..."
+          docker build -t {{.ITEM}} ./{{.ITEM}}
+
+  docker-compose-build:
+    desc: Construit les services via docker-compose
+    cmds:
+      - docker-compose build
+
+  build-service:
+    desc: "Construit un service spécifique (usage: task build-service -- <service_name>)"
+    cmds:
+      - echo "Building {{.CLI_ARGS}}..."
+      - docker build -t {{.CLI_ARGS}} ./{{.CLI_ARGS}}
+    requires:
+      vars: [CLI_ARGS]
+
+  test-builds:
+    desc: Teste les deux méthodes de build
+    cmds:
+      - task: docker-build
+      - task: docker-compose-build
+
+  # ─── Helm Deploy Tasks ───────────────────────────────────────────────────────
+
+  helm-deploy-tasks:
+    desc: "Déploie le tasks-service via Helm en injectant DATABASE_URL depuis .env"
+    cmds:
+      - |
+        helm upgrade --install tasks-service ./helm/tasks-service \
+          -n demo-devops --create-namespace \
+          --set "secrets.DATABASE_URL=$DATABASE_URL"
+
+  helm-deploy-stats:
+    desc: "Déploie le stats-service via Helm"
+    cmds:
+      - |
+        helm upgrade --install stats-service ./helm/stats-service \
+          -n demo-devops --create-namespace
+
+  helm-deploy-frontend:
+    desc: "Déploie le frontend via Helm"
+    cmds:
+      - |
+        helm upgrade --install frontend ./helm/frontend \
+          -n demo-devops --create-namespace
+
+  helm-deploy-all:
+    desc: "Déploie tous les services Helm (lit les secrets depuis .env)"
+    cmds:
+      - task: helm-deploy-tasks
+      - task: helm-deploy-stats
+      - task: helm-deploy-frontend
